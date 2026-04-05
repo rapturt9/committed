@@ -35,8 +35,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             await integrationManager.syncAll()
             checkDeadlines()
 
-            deadlineTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-                Task { @MainActor in
+            deadlineTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+                Task { @MainActor [weak self] in
                     self?.checkDeadlines()
                 }
             }

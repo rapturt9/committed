@@ -13,7 +13,7 @@ jobs:
 
       - name: Build app
         run: |
-          swift build
+          swift build -Xswiftc -strict-concurrency=minimal
 
           APP_NAME="Committed"
           BUILD_DIR=".build/arm64-apple-macosx/debug"

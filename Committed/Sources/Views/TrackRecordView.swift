@@ -42,22 +42,19 @@ struct TrackRecordView: View {
             // Tab bar
             HStack(spacing: 0) {
                 TabButton(title: "All Commitments", selected: selectedTab == 0) { selectedTab = 0 }
-                TabButton(title: "Pre-Mortems", selected: selectedTab == 1) { selectedTab = 1 }
-                TabButton(title: "Post-Mortems", selected: selectedTab == 2) { selectedTab = 2 }
-                TabButton(title: "Long Term Goals", selected: selectedTab == 3) { selectedTab = 3 }
+                TabButton(title: "Reflections", selected: selectedTab == 1) { selectedTab = 1 }
+                TabButton(title: "Long Term Goals", selected: selectedTab == 2) { selectedTab = 2 }
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
 
             Divider().padding(.top, 8)
 
-            // Content
             ScrollView {
                 switch selectedTab {
                 case 0: allCommitmentsTab
-                case 1: preMortemsTab
-                case 2: postMortemsTab
-                case 3: longTermGoalsTab
+                case 1: reflectionsTab
+                case 2: longTermGoalsTab
                 default: EmptyView()
                 }
             }
@@ -130,91 +127,91 @@ struct TrackRecordView: View {
         }
     }
 
-    private var preMortemsTab: some View {
+    private var reflectionsTab: some View {
         VStack(alignment: .leading, spacing: 0) {
-            let withPM = store.commitments.filter { !$0.preMortems.isEmpty }
+            let withReflections = store.commitments
+                .filter { !$0.preMortems.isEmpty || !$0.postMortems.isEmpty }
+                .sorted { $0.deadline > $1.deadline }
 
-            if withPM.isEmpty {
-                Text("No pre-mortems yet. They're required when creating commitments.")
+            if withReflections.isEmpty {
+                Text("No reflections yet. Pre-mortems are required on creation, post-mortems on failure.")
                     .foregroundColor(.secondary)
                     .padding(24)
             }
 
-            ForEach(withPM.sorted(by: { $0.deadline > $1.deadline })) { c in
-                ForEach(c.preMortems) { pm in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text(c.title)
-                                .font(.system(size: 14, weight: .bold))
-                            Spacer()
-                            Text(pm.createdAt.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                        }
+            ForEach(withReflections) { c in
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header
+                    HStack {
+                        Text(c.title)
+                            .font(.system(size: 16, weight: .bold))
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            riskRow(number: 1, text: pm.risk1)
-                            riskRow(number: 2, text: pm.risk2)
-                            riskRow(number: 3, text: pm.risk3)
-                        }
-
-                        if !pm.mitigations.isEmpty {
-                            Text("Mitigations: \(pm.mitigations)")
-                                .font(.system(size: 12))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-
-                    Divider()
-                }
-            }
-        }
-    }
-
-    private var postMortemsTab: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            let withPM = store.commitments.filter { !$0.postMortems.isEmpty }
-
-            if withPM.isEmpty {
-                Text("No post-mortems yet. They're triggered when completing or failing commitments.")
-                    .foregroundColor(.secondary)
-                    .padding(24)
-            }
-
-            ForEach(withPM.sorted(by: { $0.deadline > $1.deadline })) { c in
-                ForEach(c.postMortems) { pm in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text(c.title)
-                                .font(.system(size: 14, weight: .bold))
-
-                            Text(pm.succeeded ? "completed" : "failed")
+                        if c.status == .completed || c.status == .failed {
+                            Text(c.status.rawValue)
                                 .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(pm.succeeded ? .green : .red)
+                                .foregroundColor(c.status == .completed ? .green : .red)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background((pm.succeeded ? Color.green : Color.red).opacity(0.1))
+                                .background((c.status == .completed ? Color.green : Color.red).opacity(0.1))
                                 .cornerRadius(4)
-
-                            Spacer()
-
-                            Text(pm.createdAt.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
                         }
 
-                        LabeledField(label: "Outcome", text: pm.outcome)
-                        LabeledField(label: "What worked", text: pm.whatWorked)
-                        LabeledField(label: "What failed", text: pm.whatFailed)
-                        LabeledField(label: "Lessons", text: pm.lessonsLearned)
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
+                        if let p = c.forecastProbability {
+                            Text("P=\(Int(p * 100))%")
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(.purple)
+                        }
 
-                    Divider()
+                        Spacer()
+
+                        Text(c.deadline.formatted(.dateTime.month(.abbreviated).day()))
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
+
+                    // Pre-mortem
+                    ForEach(c.preMortems) { pm in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("PRE-MORTEM")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(.orange)
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                riskRow(number: 1, text: pm.risk1)
+                                riskRow(number: 2, text: pm.risk2)
+                                riskRow(number: 3, text: pm.risk3)
+                            }
+
+                            if !pm.mitigations.isEmpty {
+                                LabeledField(label: "Mitigations", text: pm.mitigations)
+                            }
+                        }
+                        .padding(10)
+                        .background(Color.orange.opacity(0.05))
+                        .cornerRadius(8)
+                    }
+
+                    // Post-mortem
+                    ForEach(c.postMortems) { pm in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("POST-MORTEM")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(pm.succeeded ? .green : .red)
+
+                            LabeledField(label: "Outcome", text: pm.outcome)
+                            LabeledField(label: "What worked", text: pm.whatWorked)
+                            LabeledField(label: "What failed", text: pm.whatFailed)
+                            LabeledField(label: "Lessons", text: pm.lessonsLearned)
+                        }
+                        .padding(10)
+                        .background((pm.succeeded ? Color.green : Color.red).opacity(0.05))
+                        .cornerRadius(8)
+                    }
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
+
+                Divider()
             }
         }
     }

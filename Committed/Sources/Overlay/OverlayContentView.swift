@@ -340,9 +340,6 @@ struct FailedItemPostMortemOverlay: View {
 
         // Save to store - avoid duplicates for same item on same day
         let store = Store.shared
-        let todayStr = { () -> String in
-            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.string(from: Date())
-        }()
         let alreadyRecorded = store.commitments.contains {
             $0.title == itemTitle && $0.status == .failed &&
             $0.createdAt > Calendar.current.startOfDay(for: Date())
