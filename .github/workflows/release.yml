@@ -1,0 +1,78 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build app
+        run: |
+          swift build
+
+          APP_NAME="Committed"
+          BUILD_DIR=".build/arm64-apple-macosx/debug"
+          APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
+
+          rm -rf "$APP_BUNDLE"
+          mkdir -p "$APP_BUNDLE/Contents/MacOS"
+          mkdir -p "$APP_BUNDLE/Contents/Resources"
+
+          cp "$BUILD_DIR/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+          cp "Committed/Resources/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
+
+          # Generate app icon
+          swift generate-icon.swift || true
+          if [ -d "Committed/Resources/AppIcon.iconset" ]; then
+            iconutil -c icns Committed/Resources/AppIcon.iconset -o "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+          fi
+
+          codesign --force --deep --sign - "$APP_BUNDLE"
+
+      - name: Create DMG
+        run: |
+          APP_BUNDLE=".build/arm64-apple-macosx/debug/Committed.app"
+          DMG_NAME="Committed-${{ github.ref_name }}.dmg"
+
+          mkdir -p dmg_contents
+          cp -r "$APP_BUNDLE" dmg_contents/
+          ln -s /Applications dmg_contents/Applications
+
+          hdiutil create -volname "Committed" -srcfolder dmg_contents -ov -format UDZO "$DMG_NAME"
+
+      - name: Create ZIP
+        run: |
+          APP_BUNDLE=".build/arm64-apple-macosx/debug/Committed.app"
+          ZIP_NAME="Committed-${{ github.ref_name }}.zip"
+          cd .build/arm64-apple-macosx/debug && zip -r "../../../$ZIP_NAME" Committed.app
+
+      - name: Run tests
+        run: swift test
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Committed-${{ github.ref_name }}.dmg
+            Committed-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            1. Download `Committed-${{ github.ref_name }}.dmg`
+            2. Open the DMG and drag Committed to Applications
+            3. Create a `.env` file at `~/.committed.env` with your config:
+               ```
+               FATEBOOK_API_KEY=your_key
+               OBSIDIAN_VAULT_PATH=/path/to/vault
+               ```
+            4. Launch Committed from Applications
+
+            Or download the ZIP and unzip to `/Applications/`.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

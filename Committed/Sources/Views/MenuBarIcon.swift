@@ -43,7 +43,7 @@ struct MenuBarLabel: View {
         if hours > 0 {
             return "\(hours)h\(minutes)m"
         }
-        if minutes < 15 {
+        if minutes < 30 {
             return "\(minutes):\(String(format: "%02d", seconds))"
         }
         return "\(minutes)m"
