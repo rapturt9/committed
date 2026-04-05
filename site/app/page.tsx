@@ -152,10 +152,10 @@ export default function Home() {
                 Download DMG
               </a>
             </div>
-            <div className="bg-zinc-900 rounded-xl p-6 text-left">
+            <div className="bg-zinc-900 rounded-xl p-6 text-left overflow-hidden">
               <h3 className="font-semibold mb-3">Option 2: Build from source</h3>
-              <div className="font-mono text-sm text-zinc-400 space-y-1">
-                <p>git clone {REPO_URL}.git</p>
+              <div className="font-mono text-xs text-zinc-400 space-y-1 break-all">
+                <p>git clone {REPO_URL}</p>
                 <p>cd committed</p>
                 <p>cp .env.example .env</p>
                 <p>./build.sh</p>

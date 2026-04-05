@@ -294,9 +294,12 @@ struct MenuBarPopover: View {
             if let id = item.sourceReminderID {
                 Task { await integrationManager.completeReminder(id: id) }
             }
+            // Show optional post-mortem for reflection
+            overlayManager.showOptionalPostMortem(title: item.title)
         case .streak:
-            // Mark streak as completed in local cache
             Task { await integrationManager.completeStreak(title: item.title) }
+            // Show optional post-mortem for reflection
+            overlayManager.showOptionalPostMortem(title: item.title)
         }
     }
 

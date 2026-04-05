@@ -20,6 +20,11 @@ struct OverlayContentView: View {
                     FailedItemPostMortemOverlay(itemTitle: title)
                         .environmentObject(overlayManager)
                 }
+            case .optionalPostMortem:
+                if let title = overlayManager.failedItemTitle {
+                    OptionalPostMortemOverlay(itemTitle: title)
+                        .environmentObject(overlayManager)
+                }
             case .forceNewCommitment:
                 ForceNewCommitmentOverlay()
                     .environmentObject(overlayManager)
@@ -245,11 +250,14 @@ struct ForceNewCommitmentOverlay: View {
         // Fatebook forecast in background
         Task {
             let fatebook = FatebookService(apiKey: AppConfig.shared.fatebookAPIKey)
-            _ = try? await fatebook.createQuestion(
+            if let questionURL = try? await fatebook.createQuestion(
                 title: "Will I complete '\(title)' by deadline?",
                 resolveBy: deadline,
                 forecast: probability
-            )
+            ) {
+                commitment.fatebookQuestionID = questionURL
+                Store.shared.save()
+            }
         }
 
         // Create Apple Reminder
@@ -358,6 +366,80 @@ struct FailedItemPostMortemOverlay: View {
             store.add(failRecord)
         }
 
+        overlayManager.dismissOverlay()
+    }
+}
+
+// MARK: - Optional Post-Mortem (skippable, for completed items)
+
+struct OptionalPostMortemOverlay: View {
+    let itemTitle: String
+    @EnvironmentObject var overlayManager: OverlayManager
+    @State private var whatWentWell = ""
+    @State private var lesson = ""
+
+    var body: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Text("COMPLETED")
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundColor(.green)
+                    .tracking(4)
+                Text(itemTitle)
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
+                Text("Quick reflection (optional)")
+                    .font(.system(size: 16))
+                    .foregroundColor(.gray)
+            }
+
+            VStack(alignment: .leading, spacing: 16) {
+                PostMortemField(label: "What went well?", text: $whatWentWell)
+                PostMortemField(label: "Anything to do differently next time?", text: $lesson)
+            }
+            .frame(maxWidth: 500)
+
+            HStack(spacing: 16) {
+                Button(action: { overlayManager.dismissOverlay() }) {
+                    Text("Skip")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 12)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+
+                Button(action: submit) {
+                    Text("Save reflection")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 12)
+                        .background(Color.white)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+                .disabled(whatWentWell.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(48)
+    }
+
+    private func submit() {
+        Task {
+            let obsidian = ObsidianService(vaultPath: AppConfig.shared.obsidianVaultPath)
+            await obsidian.writePostMortem(
+                commitment: itemTitle,
+                outcome: "Completed on time",
+                whatWorked: whatWentWell,
+                whatFailed: "",
+                lessons: lesson,
+                succeeded: true,
+                date: Date()
+            )
+        }
         overlayManager.dismissOverlay()
     }
 }

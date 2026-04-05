@@ -18,6 +18,7 @@ class OverlayManager: ObservableObject {
     enum OverlayType {
         case postMortem
         case failedItemPostMortem
+        case optionalPostMortem
         case forceNewCommitment
     }
 
@@ -32,6 +33,13 @@ class OverlayManager: ObservableObject {
         currentCommitment = nil
         failedItemTitle = title
         overlayType = .failedItemPostMortem
+        showOverlay()
+    }
+
+    func showOptionalPostMortem(title: String) {
+        currentCommitment = nil
+        failedItemTitle = title
+        overlayType = .optionalPostMortem
         showOverlay()
     }
 
