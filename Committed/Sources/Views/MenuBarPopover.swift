@@ -517,43 +517,45 @@ struct LongTermGoalsSection: View {
                 SectionHeader(title: "LONG TERM GOALS", color: .purple)
 
                 ForEach(goals) { goal in
-                    HStack(spacing: 8) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(.purple)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(goal.title)
-                                .font(.system(size: 12, weight: .medium))
-
-                            HStack(spacing: 6) {
-                                Text("P=\(Int(goal.probability * 100))%")
-                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.purple)
-                                    .padding(.horizontal, 3)
-                                    .background(Color.purple.opacity(0.1))
-                                    .cornerRadius(2)
-
-                                Text("by \(goal.resolveBy.formatted(.dateTime.month(.abbreviated).year()))")
-                                    .font(.system(size: 9))
-                                    .foregroundColor(.secondary)
-                            }
+                    Button(action: {
+                        if let url = URL(string: goal.url) {
+                            NSWorkspace.shared.open(url)
                         }
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 10))
+                                .foregroundColor(.purple)
 
-                        Spacer()
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(goal.title)
+                                    .font(.system(size: 12, weight: .medium))
 
-                        Button(action: {
-                            NSWorkspace.shared.open(URL(string: goal.url)!)
-                        }) {
+                                HStack(spacing: 6) {
+                                    Text("P=\(Int(goal.probability * 100))%")
+                                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.purple)
+                                        .padding(.horizontal, 3)
+                                        .background(Color.purple.opacity(0.1))
+                                        .cornerRadius(2)
+
+                                    Text("by \(goal.resolveBy.formatted(.dateTime.month(.abbreviated).year()))")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+
+                            Spacer()
+
                             Image(systemName: "arrow.up.right.square")
                                 .font(.system(size: 11))
                                 .foregroundColor(.secondary)
                         }
-                        .buttonStyle(.plain)
-                        .help("Open in Fatebook")
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 3)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 3)
+                    .buttonStyle(.plain)
                 }
             }
         )
