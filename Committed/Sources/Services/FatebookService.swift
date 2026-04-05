@@ -19,7 +19,7 @@ actor FatebookService {
         }
     }
 
-    func createQuestion(title: String, resolveBy: Date, forecast: Double) async throws -> String? {
+    func createQuestion(title: String, resolveBy: Date, forecast: Double, tags: [String] = ["committed"]) async throws -> String? {
         guard !apiKey.isEmpty else {
             NSLog("[Fatebook] No API key")
             return nil
@@ -28,13 +28,20 @@ actor FatebookService {
         let dateFormatter = ISO8601DateFormatter()
         let resolveByStr = dateFormatter.string(from: resolveBy)
 
-        var components = URLComponents(string: "\(baseURL)/createQuestion")!
-        components.queryItems = [
+        var queryItems = [
             URLQueryItem(name: "apiKey", value: apiKey),
             URLQueryItem(name: "title", value: title),
             URLQueryItem(name: "resolveBy", value: resolveByStr),
             URLQueryItem(name: "forecast", value: String(forecast))
         ]
+
+        // Tags are repeated params: &tags=tag1&tags=tag2
+        for tag in tags {
+            queryItems.append(URLQueryItem(name: "tags", value: tag))
+        }
+
+        var components = URLComponents(string: "\(baseURL)/createQuestion")!
+        components.queryItems = queryItems
 
         guard let url = components.url else { return nil }
 
@@ -42,11 +49,11 @@ actor FatebookService {
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            NSLog("[Fatebook] createQuestion failed: status \(statusCode)")
+            let body = String(data: data, encoding: .utf8) ?? ""
+            NSLog("[Fatebook] createQuestion failed: status \(statusCode), body: \(body)")
             return nil
         }
 
-        // Response is a plain URL string like "https://fatebook.io/q/..."
         let responseStr = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
         NSLog("[Fatebook] Created: \(responseStr ?? "nil")")
         return responseStr

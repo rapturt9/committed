@@ -15,15 +15,54 @@ final class StreaksService: Sendable {
                 status: "Y",
                 targetTime: items[idx].targetTime
             )
-            if let data = try? JSONEncoder().encode(items) {
-                try? data.write(to: URL(fileURLWithPath: cachePath))
+            saveCache(items)
+        }
+    }
+
+    func markFailed(title: String) async {
+        guard var items = loadCache() else { return }
+        if let idx = items.firstIndex(where: { $0.title == title }) {
+            items[idx] = StreakCacheItem(
+                title: items[idx].title,
+                currentStreak: 0,
+                bestStreak: items[idx].bestStreak,
+                status: "F",
+                targetTime: items[idx].targetTime
+            )
+            saveCache(items)
+        }
+    }
+
+    func resetDaily() async {
+        guard var items = loadCache() else { return }
+        for i in items.indices {
+            // Reset status for new day but keep streaks
+            if items[i].status == "Y" {
+                // Keep the streak going
+            } else if items[i].status == "F" || items[i].status == "N" {
+                items[i] = StreakCacheItem(
+                    title: items[i].title,
+                    currentStreak: 0,
+                    bestStreak: items[i].bestStreak,
+                    status: "N",
+                    targetTime: items[i].targetTime
+                )
             }
         }
+        saveCache(items)
     }
 
     private func loadCache() -> [StreakCacheItem]? {
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: cachePath)) else { return nil }
         return try? JSONDecoder().decode([StreakCacheItem].self, from: data)
+    }
+
+    private func saveCache(_ items: [StreakCacheItem]) {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(items) {
+            try? data.write(to: URL(fileURLWithPath: cachePath))
+        }
     }
 
     func fetchStreaks() async -> [StreakItem] {
