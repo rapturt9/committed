@@ -1,0 +1,14 @@
+.build/
+.env
+*.env.local
+.DS_Store
+*.xcodeproj
+Committed.xcodeproj/
+.swiftpm/
+project.yml
+generate-icon.swift
+Committed/Resources/AppIcon.iconset/
+experiment_logs/
+*.icns
+.claude/
+CLAUDE.md
