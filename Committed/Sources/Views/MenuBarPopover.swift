@@ -15,6 +15,7 @@ struct TimelineItem: Identifiable {
     let sourceReminderID: String?
     let hasPreMortem: Bool
     let hasPostMortem: Bool
+    let fatebookURL: String?
 
     enum Kind {
         case commitment, reminder, streak
@@ -71,7 +72,8 @@ struct MenuBarPopover: View {
                 kind: .commitment, status: status,
                 probability: c.forecastProbability, brierScore: brier,
                 streakCount: nil, sourceCommitment: c, sourceReminderID: nil,
-                hasPreMortem: c.preMortemCompleted, hasPostMortem: c.postMortemCompleted
+                hasPreMortem: c.preMortemCompleted, hasPostMortem: c.postMortemCompleted,
+                fatebookURL: c.fatebookQuestionID
             ))
         }
 
@@ -92,7 +94,8 @@ struct MenuBarPopover: View {
                 kind: .reminder, status: rStatus,
                 probability: nil, brierScore: nil,
                 streakCount: nil, sourceCommitment: nil, sourceReminderID: r.id,
-                hasPreMortem: false, hasPostMortem: false
+                hasPreMortem: false, hasPostMortem: false,
+                fatebookURL: nil
             ))
         }
 
@@ -125,7 +128,8 @@ struct MenuBarPopover: View {
                 kind: .streak, status: streakStatus,
                 probability: nil, brierScore: nil,
                 streakCount: s.currentStreak, sourceCommitment: nil, sourceReminderID: nil,
-                hasPreMortem: false, hasPostMortem: false
+                hasPreMortem: false, hasPostMortem: false,
+                fatebookURL: nil
             ))
         }
 
@@ -345,10 +349,22 @@ struct TimelineRow: View {
 
             // Title + metadata
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-                    .strikethrough(item.status == .completed)
+                if let fbURL = item.fatebookURL, let url = URL(string: fbURL) {
+                    Button(action: { NSWorkspace.shared.open(url) }) {
+                        Text(item.title)
+                            .font(.system(size: 12, weight: .medium))
+                            .lineLimit(1)
+                            .strikethrough(item.status == .completed)
+                            .underline(true, color: .purple.opacity(0.5))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open in Fatebook")
+                } else {
+                    Text(item.title)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
+                        .strikethrough(item.status == .completed)
+                }
 
                 HStack(spacing: 4) {
                     // Kind badge
