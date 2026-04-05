@@ -94,8 +94,8 @@ actor ObsidianService {
         let fileName = dateFormatter.string(from: date) + ".md"
 
         let possiblePaths = [
-            (vaultPath as NSString).appendingPathComponent("Daily Notes/\(fileName)"),
             (vaultPath as NSString).appendingPathComponent("daily/\(fileName)"),
+            (vaultPath as NSString).appendingPathComponent("Daily Notes/\(fileName)"),
             (vaultPath as NSString).appendingPathComponent("\(fileName)")
         ]
 

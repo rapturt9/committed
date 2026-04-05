@@ -285,21 +285,24 @@ struct MenuBarPopover: View {
     }
 
     private func handleAction(_ item: TimelineItem) {
+        let title = item.title
         switch item.kind {
         case .commitment:
             if let c = item.sourceCommitment {
                 overlayManager.showPostMortem(for: c)
             }
         case .reminder:
-            if let id = item.sourceReminderID {
-                Task { await integrationManager.completeReminder(id: id) }
+            Task {
+                if let id = item.sourceReminderID {
+                    await integrationManager.completeReminder(id: id)
+                }
+                overlayManager.showOptionalPostMortem(title: title)
             }
-            // Show optional post-mortem for reflection
-            overlayManager.showOptionalPostMortem(title: item.title)
         case .streak:
-            Task { await integrationManager.completeStreak(title: item.title) }
-            // Show optional post-mortem for reflection
-            overlayManager.showOptionalPostMortem(title: item.title)
+            Task {
+                await integrationManager.completeStreak(title: title)
+                overlayManager.showOptionalPostMortem(title: title)
+            }
         }
     }
 

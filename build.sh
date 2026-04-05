@@ -34,8 +34,11 @@ codesign --force --sign - "$APP_BUNDLE"
 
 echo ""
 echo "Installing to /Applications..."
+launchctl unload ~/Library/LaunchAgents/com.committed.app.plist 2>/dev/null || true
 pkill -9 -f "Committed.app/Contents/MacOS" 2>/dev/null || true
 sleep 2
+rm -rf /Applications/Committed.app
 cp -r "$APP_BUNDLE" /Applications/Committed.app
+launchctl load ~/Library/LaunchAgents/com.committed.app.plist 2>/dev/null || true
 
-echo "Build complete. launchd will restart the app automatically."
+echo "Build complete. App restarted via launchd."
