@@ -10,9 +10,17 @@ struct AppConfig {
         var envVars: [String: String] = [:]
 
         // Try multiple paths for .env
+        // When launched by launchd, Bundle.main may not resolve correctly
+        let execPath = ProcessInfo.processInfo.arguments.first ?? ""
+        let appContentsPath = (execPath as NSString)
+            .deletingLastPathComponent // MacOS/
+            .appending("/../Resources/.env") // -> Contents/Resources/.env
+
         let envPaths = [
+            appContentsPath,
             Bundle.main.resourcePath.map { $0 + "/.env" },
             Bundle.main.path(forResource: ".env", ofType: nil),
+            "/Applications/Committed.app/Contents/Resources/.env",
             (NSHomeDirectory() as NSString).appendingPathComponent(".committed.env"),
             ProcessInfo.processInfo.environment["COMMITTED_ENV_PATH"]
         ].compactMap { $0 }
@@ -28,6 +36,7 @@ struct AppConfig {
                     let value = parts.dropFirst().joined(separator: "=").trimmingCharacters(in: .whitespaces)
                     envVars[key] = value
                 }
+                NSLog("[Config] Loaded .env from \(path)")
                 break
             }
         }
@@ -43,6 +52,6 @@ struct AppConfig {
         fatebookAPIKey = envVars["FATEBOOK_API_KEY"] ?? ""
         obsidianVaultPath = envVars["OBSIDIAN_VAULT_PATH"] ?? ""
 
-        NSLog("[Config] API key loaded: \(!fatebookAPIKey.isEmpty), vault: \(obsidianVaultPath)")
+        NSLog("[Config] API key: \(!fatebookAPIKey.isEmpty), vault: \(obsidianVaultPath)")
     }
 }
