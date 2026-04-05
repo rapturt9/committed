@@ -3,7 +3,7 @@
 import { track } from "@vercel/analytics";
 
 const REPO_URL = "https://github.com/rapturt9/committed";
-const DOWNLOAD_URL = "https://github.com/rapturt9/committed/releases/latest/download/Committed-v1.0.0.dmg";
+const DOWNLOAD_URL = "https://github.com/rapturt9/committed/releases/latest";
 
 function DownloadButton() {
   return (
